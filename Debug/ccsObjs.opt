@@ -2,6 +2,7 @@
 "./clock.obj"
 "./gpio.obj"
 "./i2c0.obj"
+"./main.obj"
 "./nvic.obj"
 "./tm4c123gh6pm_startup_ccs.obj"
 "./uart0.obj"

@@ -14,6 +14,7 @@ ORDERED_OBJS += \
 "./clock.obj" \
 "./gpio.obj" \
 "./i2c0.obj" \
+"./main.obj" \
 "./nvic.obj" \
 "./tm4c123gh6pm_startup_ccs.obj" \
 "./uart0.obj" \
@@ -148,8 +149,8 @@ I2C.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "I2C_Lab2_DarshilShah_1001959531.obj" "clock.obj" "gpio.obj" "i2c0.obj" "nvic.obj" "tm4c123gh6pm_startup_ccs.obj" "uart0.obj" "wait.obj" 
-	-$(RM) "I2C_Lab2_DarshilShah_1001959531.d" "clock.d" "gpio.d" "i2c0.d" "nvic.d" "tm4c123gh6pm_startup_ccs.d" "uart0.d" "wait.d" 
+	-$(RM) "I2C_Lab2_DarshilShah_1001959531.obj" "clock.obj" "gpio.obj" "i2c0.obj" "main.obj" "nvic.obj" "tm4c123gh6pm_startup_ccs.obj" "uart0.obj" "wait.obj" 
+	-$(RM) "I2C_Lab2_DarshilShah_1001959531.d" "clock.d" "gpio.d" "i2c0.d" "main.d" "nvic.d" "tm4c123gh6pm_startup_ccs.d" "uart0.d" "wait.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 
