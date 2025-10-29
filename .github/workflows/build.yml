@@ -1,0 +1,42 @@
+name: Compile TM4C project
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install ARM GCC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi
+
+      - name: Compile all .c sources (no linking)
+        run: |
+          set -e
+          for f in $(git ls-files '*.c'); do
+            echo "Compiling $f"
+            arm-none-eabi-gcc \
+              -mcpu=cortex-m4 \
+              -mthumb \
+              -mfpu=fpv4-sp-d16 \
+              -mfloat-abi=hard \
+              -O2 -g3 \
+              -DPART_TM4C123GH6PM \
+              -I. \
+              -c "$f" -o "${f%.c}.o"
+          done
+
+      - name: Upload .o artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled_objects
+          path: "**/*.o"
