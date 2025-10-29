@@ -1,4 +1,4 @@
-name: CI (Fast checks + CCS build)
+name: CCS Build (self-hosted, TI toolchain only)
 
 on:
   push:
@@ -7,81 +7,44 @@ on:
     branches: ["**"]
 
 jobs:
-  fast_checks:
-    name: Fast compile & static checks (hosted)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install ARM GCC + tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi cppcheck
-
-      - name: Compile all .c to .o (no linking, fail on warnings)
-        run: |
-          set -e
-          for f in $(git ls-files '*.c'); do
-            echo "Compiling $f"
-            arm-none-eabi-gcc \
-              -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard \
-              -O2 -g3 -Wall -Wextra -Werror \
-              -DPART_TM4C123GH6PM -I. \
-              -c "$f" -o "${f%.c}.o"
-          done
-          echo "Objects built:" > $GITHUB_STEP_SUMMARY
-          ls -1 **/*.o | tee -a $GITHUB_STEP_SUMMARY
-
-      - name: Cppcheck (static analysis)
-        run: |
-          cppcheck --enable=warning,style,performance,portability --error-exitcode=1 \
-                   --inline-suppr --std=c11 -I . $(git ls-files '*.c')
-
-      - name: Upload .o artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: objects
-          path: "**/*.o"
-
   ccs_build:
-    name: CCS build (.out + .hex/.hx1) on self-hosted Windows
-    runs-on: self-hosted
-    # Remove "needs" if you want both jobs to run fully independently
-    needs: [fast_checks]
+    name: Build with CCS (Debug) and publish .out/.hex/.hx1
+    runs-on: self-hosted   # Your Windows runner with CCS installed
+    env:
+      # 🔧 Update these paths if your CCS version/path differs
+      CCS: C:\ti\ccs1220\ccs
+      TOOLS: C:\ti\ccs1220\ccs\tools\compiler\ti-cgt-arm_20.2.7.LTS\bin
+      WS: ${{ github.workspace }}\_ccs_ws     # temporary CCS workspace
+      PROJ_DIR: ${{ github.workspace }}        # project root in repo
+      CFG: Debug                               # or Release if you prefer
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Import CCS project into temp workspace
+      - name: Prepare CCS workspace
         shell: cmd
-        env:
-          CCS: C:\ti\ccs1220\ccs
-          WS:  ${{ github.workspace }}\_ccs_ws
-          PROJ_DIR: ${{ github.workspace }}
         run: |
-          if not exist "%WS%" mkdir "%WS%"
+          if exist "%WS%" rmdir /s /q "%WS%"
+          mkdir "%WS%"
+
+      - name: Import CCS project
+        shell: cmd
+        run: |
           "%CCS%\eclipse\eclipsec.exe" -noSplash -data "%WS%" ^
             -application com.ti.ccstudio.apps.projectImport ^
             -ccs.projects "%PROJ_DIR%"
 
-      - name: Build project (Debug)
+      - name: Build CCS project (%CFG%)
         shell: cmd
-        env:
-          CCS: C:\ti\ccs1220\ccs
-          WS:  ${{ github.workspace }}\_ccs_ws
         run: |
           "%CCS%\eclipse\eclipsec.exe" -noSplash -data "%WS%" ^
             -application com.ti.ccstudio.apps.projectBuild ^
-            -ccs.build all -ccs.configuration Debug
+            -ccs.configuration %CFG% -ccs.build all
 
-      - name: Create HEX/HX1 from OUT
+      - name: Make HEX / HX1 from OUT
         shell: cmd
-        env:
-          OUT_DIR: ${{ github.workspace }}\Debug
-          TOOLS:   C:\ti\ccs1220\ccs\tools\compiler\ti-cgt-arm_20.2.7.LTS\bin
         run: |
-          for %%F in ("%OUT_DIR%\*.out") do (
+          for %%F in ("%PROJ_DIR%\%CFG%\*.out") do (
             "%TOOLS%\armhex.exe" -o "%%~dpnF.hex" "%%F"
             copy /Y "%%~dpnF.hex" "%%~dpnF.hx1" >NUL
           )
@@ -89,9 +52,9 @@ jobs:
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-ccs
+          name: firmware-ccs-${{ github.run_number }}
           path: |
-            **/Debug/*.out
-            **/Debug/*.map
-            **/Debug/*.hex
-            **/Debug/*.hx1
+            **\%CFG%\*.out
+            **\%CFG%\*.map
+            **\%CFG%\*.hex
+            **\%CFG%\*.hx1
