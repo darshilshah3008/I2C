@@ -4,7 +4,7 @@
 
 SHELL = cmd.exe
 
-CG_TOOL_ROOT := C:/ti/ccs1120/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS
+CG_TOOL_ROOT := C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS
 
 GEN_OPTS__FLAG := 
 GEN_CMDS__FLAG := 
@@ -127,40 +127,27 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXE_OUTPUTS += \
-lab2_Darshil_Hareshkumar_Shah.out \
+I2C.out \
 
 EXE_OUTPUTS__QUOTED += \
-"lab2_Darshil_Hareshkumar_Shah.out" \
-
-BIN_OUTPUTS += \
-lab2_Darshil_Hareshkumar_Shah.hex \
-
-BIN_OUTPUTS__QUOTED += \
-"lab2_Darshil_Hareshkumar_Shah.hex" \
+"I2C.out" \
 
 
 # All Target
 all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
-	@$(MAKE) --no-print-directory -Onone "lab2_Darshil_Hareshkumar_Shah.out"
+	@$(MAKE) --no-print-directory -Onone "I2C.out"
 
 # Tool invocations
-lab2_Darshil_Hareshkumar_Shah.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
+I2C.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: Arm Linker'
-	"C:/ti/ccs1120/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me --define=ccs="ccs" --define=PART_TM4C123GH6PM -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"lab2_Darshil_Hareshkumar_Shah.map" --heap_size=0 --stack_size=512 -i"C:/ti/ccs1120/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/lib" -i"C:/ti/ccs1120/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="lab2_Darshil_Hareshkumar_Shah_linkInfo.xml" --rom_model -o "lab2_Darshil_Hareshkumar_Shah.out" $(ORDERED_OBJS)
+	"C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/bin/armcl" -mv7M4 --code_state=16 --float_support=FPv4SPD16 -me --define=ccs="ccs" --define=PART_TM4C123GH6PM -g --gcc --diag_warning=225 --diag_wrap=off --display_error_number --abi=eabi -z -m"I2C.map" --heap_size=0 --stack_size=512 -i"C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/lib" -i"C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-arm_20.2.7.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="I2C_linkInfo.xml" --rom_model -o "I2C.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
-	@echo ' '
-
-lab2_Darshil_Hareshkumar_Shah.hex: $(EXE_OUTPUTS)
-	@echo 'Building secondary target: "$@"'
-	@echo 'Invoking: Arm Hex Utility'
-	"C:/ti/ccs1120/ccs/tools/compiler/ti-cgt-arm_20.2.5.LTS/bin/armhex" --diag_wrap=off -o "lab2_Darshil_Hareshkumar_Shah.hex" $(EXE_OUTPUTS__QUOTED)
-	@echo 'Finished building secondary target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(BIN_OUTPUTS__QUOTED)$(EXE_OUTPUTS__QUOTED)
+	-$(RM) $(EXE_OUTPUTS__QUOTED)
 	-$(RM) "I2C_Lab2_DarshilShah_1001959531.obj" "clock.obj" "gpio.obj" "i2c0.obj" "nvic.obj" "tm4c123gh6pm_startup_ccs.obj" "uart0.obj" "wait.obj" 
 	-$(RM) "I2C_Lab2_DarshilShah_1001959531.d" "clock.d" "gpio.d" "i2c0.d" "nvic.d" "tm4c123gh6pm_startup_ccs.d" "uart0.d" "wait.d" 
 	-@echo 'Finished clean'
