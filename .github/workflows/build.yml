@@ -1,4 +1,4 @@
-name: CCS Build (self-hosted, TI toolchain only)
+name: TM4C compile check (syntax-only)
 
 on:
   push:
@@ -7,54 +7,44 @@ on:
     branches: ["**"]
 
 jobs:
-  ccs_build:
-    name: Build with CCS (Debug) and publish .out/.hex/.hx1
-    runs-on: self-hosted   # Your Windows runner with CCS installed
-    env:
-      # 🔧 Update these paths if your CCS version/path differs
-      CCS: C:\ti\ccs1220\ccs
-      TOOLS: C:\ti\ccs1220\ccs\tools\compiler\ti-cgt-arm_20.2.7.LTS\bin
-      WS: ${{ github.workspace }}\_ccs_ws     # temporary CCS workspace
-      PROJ_DIR: ${{ github.workspace }}        # project root in repo
-      CFG: Debug                               # or Release if you prefer
+  compile:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare CCS workspace
-        shell: cmd
+      - name: Install ARM GCC
         run: |
-          if exist "%WS%" rmdir /s /q "%WS%"
-          mkdir "%WS%"
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi
 
-      - name: Import CCS project
-        shell: cmd
+      - name: Compile all C files to .o (no linking)
+        shell: bash
         run: |
-          "%CCS%\eclipse\eclipsec.exe" -noSplash -data "%WS%" ^
-            -application com.ti.ccstudio.apps.projectImport ^
-            -ccs.projects "%PROJ_DIR%"
+          set -e
+          mkdir -p build
+          # Compiler flags for TM4C123 (Cortex-M4F)
+          CFLAGS="-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard \
+                  -std=c11 -O2 -g3 -ffunction-sections -fdata-sections \
+                  -Wall -Wextra -Wno-implicit-function-declaration \
+                  -DPART_TM4C123GH6PM -I."
+          # Find all .c files except typical CCS output folders
+          mapfile -t SRC < <(git ls-files '*.c' | grep -Ev '(^|/)(Debug|Release|.metadata|targetConfigs)/')
+          if [ ${#SRC[@]} -eq 0 ]; then
+            echo "No .c files found"
+            exit 1
+          fi
+          # Compile each file to a parallel build/ path
+          for f in "${SRC[@]}"; do
+            of="build/${f%.c}.o"
+            mkdir -p "$(dirname "$of")"
+            echo "Compiling $f"
+            arm-none-eabi-gcc $CFLAGS -c "$f" -o "$of"
+          done
 
-      - name: Build CCS project (%CFG%)
-        shell: cmd
-        run: |
-          "%CCS%\eclipse\eclipsec.exe" -noSplash -data "%WS%" ^
-            -application com.ti.ccstudio.apps.projectBuild ^
-            -ccs.configuration %CFG% -ccs.build all
-
-      - name: Make HEX / HX1 from OUT
-        shell: cmd
-        run: |
-          for %%F in ("%PROJ_DIR%\%CFG%\*.out") do (
-            "%TOOLS%\armhex.exe" -o "%%~dpnF.hex" "%%F"
-            copy /Y "%%~dpnF.hex" "%%~dpnF.hx1" >NUL
-          )
-
-      - name: Upload firmware artifacts
+      - name: Upload .o artifacts (optional)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: firmware-ccs-${{ github.run_number }}
-          path: |
-            **\%CFG%\*.out
-            **\%CFG%\*.map
-            **\%CFG%\*.hex
-            **\%CFG%\*.hx1
+          name: tm4c-objects
+          path: build/**/*.o
